@@ -9,7 +9,7 @@ public class Lizard_IK : MonoBehaviour
     public GameObject lookat;
     private Quaternion targetRot;
 
-    public GameObject leg1_footTarget, leg1_ElbowConstraint, leg1_Shoulder;
+    public GameObject leg1_footConstraint, leg1_elbowConstraint, leg1_shoulder, leg1_elbow, leg1_foot;
 
     public float headFollowSpeed = 1f;
 
@@ -29,7 +29,7 @@ public class Lizard_IK : MonoBehaviour
     {
         solveNeck();
 
-        solveLeg(leg1_footTarget, leg1_Shoulder, leg1_ElbowConstraint);
+        solveLeg(leg1_footConstraint, leg1_elbowConstraint, leg1_shoulder, leg1_elbow, leg1_foot);
     }
 
     private void solveNeck()
@@ -39,25 +39,25 @@ public class Lizard_IK : MonoBehaviour
         neck.transform.rotation = Quaternion.Slerp(neck.transform.rotation, targetRot, headFollowSpeed * Time.deltaTime);
     }
 
-    private void solveLeg(GameObject footTarget, GameObject shoulder, GameObject elbowConstraint)
+    private void solveLeg(GameObject footTarget, GameObject elbowConstraint, GameObject shoulder, GameObject elbow, GameObject foot)
     {
         // get shoulder-to-constraint vector
         // a3real3Diff(baseToConstraint.v, controlLocator_wristConstraint.v, jointTransform_shoulder.v3.v);
         Vector3 shoulderToFoot = footTarget.transform.position - shoulder.transform.position;
-        Vector3 shoulderToElbow = shoulder.transform.GetChild(0).position - shoulder.transform.position;
+        Vector3 shoulderToElbow = elbowConstraint.transform.position - shoulder.transform.position;
 
         float sideLength1 = shoulderToElbow.magnitude;
         float sideLength2 = (elbowConstraint.transform.position - footTarget.transform.position).magnitude;
-        sideLength1 = 0.25f;
-        sideLength2 = 0.25f;
+        sideLength1 = 0.6f;
+        sideLength2 = 0.6f;
         float baseToEndLength = shoulderToFoot.magnitude;
         Vector3 elbowPos;
 
 
         if (baseToEndLength > sideLength1 + sideLength2)
         {
-            shoulder.transform.GetChild(0).transform.rotation = Quaternion.LookRotation(shoulderToFoot, transform.up);
-            shoulder.transform.GetChild(0).transform.GetChild(0).transform.position += shoulderToFoot;
+            elbow.transform.rotation = Quaternion.LookRotation(shoulderToFoot, transform.up);
+            foot.transform.position = shoulderToFoot*sideLength2;
         }
         else
         {
@@ -79,9 +79,14 @@ public class Lizard_IK : MonoBehaviour
             triangleUp *= triangleHeight;
 
             elbowPos = triangleUp + shoulderToFoot;// + shoulder.transform.position;
-            shoulder.transform.GetChild(0).transform.position = shoulder.transform.position + elbowPos;
-            shoulder.transform.GetChild(0).transform.GetChild(0).transform.position = footTarget.transform.position;
-            shoulder.transform.rotation = Quaternion.LookRotation(shoulder.transform.position - elbowPos, transform.up);
+            elbow.transform.position = shoulder.transform.position + elbowPos;
+            foot.transform.position = footTarget.transform.position;
+            foot.transform.rotation = footTarget.transform.rotation;
+            //elbow.transform.rotation = Quaternion.LookRotation(elbow.transform.position - foot.transform.position, transform.up);
+            elbow.transform.rotation = Quaternion.LookRotation(foot.transform.position - elbow.transform.position, transform.up);
+            //shoulder.transform.rotation = Quaternion.LookRotation(shoulder.transform.position - elbowPos, transform.up);
+            shoulder.transform.rotation = Quaternion.LookRotation(elbowPos - shoulder.transform.position, transform.up);
+
         }
     }
 }
