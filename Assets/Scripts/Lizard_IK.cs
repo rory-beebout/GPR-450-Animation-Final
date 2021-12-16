@@ -2,6 +2,26 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+[System.Serializable]
+public class Leg
+{
+    public GameObject endConstraint, poleConstraint, shoulder, elbow, foot;
+    public Vector3 shoulderRotationOffset, elbowRotationOffset, footRotationOffset;
+    public float shoulderToElbowLength, elbowToWristLength;
+
+    //public Leg(GameObject end, GameObject pole, GameObject theShoulder, GameObject theElbow, GameObject theFoot)
+    //{
+    //    endConstraint = end;
+    //    poleConstraint = pole;
+    //    shoulder = theShoulder;
+    //    elbow = theElbow;
+    //    foot = theFoot;
+    //    shoulderRotationOffset = theShoulder.transform.rotation.eulerAngles;
+    //    elbowRotationOffset = theElbow.transform.rotation.eulerAngles;
+    //    footRotationOffset = theFoot.transform.rotation.eulerAngles;
+    //}
+}
 public class Lizard_IK : MonoBehaviour
 {
     //-----------------------------------------------------------------------------------------------------------------------------
@@ -14,27 +34,12 @@ public class Lizard_IK : MonoBehaviour
     //-----------------------------------------------------------------------------------------------------------------------------
     // Leg vars
 
-    [System.Serializable]
-    public class Leg
-    {
-        public GameObject endConstraint, poleConstraint, shoulder, elbow, foot;
-        public Vector3 shoulderRotationOffset, elbowRotationOffset, footRotationOffset;
-        public float shoulderToElbowLength, elbowToWristLength;
 
-        //public Leg(GameObject end, GameObject pole, GameObject theShoulder, GameObject theElbow, GameObject theFoot)
-        //{
-        //    endConstraint = end;
-        //    poleConstraint = pole;
-        //    shoulder = theShoulder;
-        //    elbow = theElbow;
-        //    foot = theFoot;
-        //    shoulderRotationOffset = theShoulder.transform.rotation.eulerAngles;
-        //    elbowRotationOffset = theElbow.transform.rotation.eulerAngles;
-        //    footRotationOffset = theFoot.transform.rotation.eulerAngles;
-        //}
-    }
 
-    public Leg leg1, leg2, leg3, leg4;
+    public Leg leg1 = new Leg();
+    public Leg leg2 = new Leg();
+    public Leg leg3 = new Leg();
+    public Leg leg4 = new Leg();
 
     //-----------------------------------------------------------------------------------------------------------------------------
     // Tail vars
@@ -74,6 +79,8 @@ public class Lizard_IK : MonoBehaviour
         initializeLeg(leg4);
 
         initializeTail();
+
+        gameObject.GetComponent<Lizard_LegManager>().init();
     }
 
     void initializeNeck()
