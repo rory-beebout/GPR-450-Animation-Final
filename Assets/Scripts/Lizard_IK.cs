@@ -232,11 +232,25 @@ public class Lizard_IK : MonoBehaviour
         startSegment.currentPos = tail_BaseBone.transform.position;
         tailSegments[0] = startSegment;
 
-        //for loop to apply to all segments
+        // for all segments
         for (int i = 0; i < tailSegments.Count - 1; i++)
         {
             RopeSegment segment1 = tailSegments[i];
             RopeSegment segment2 = tailSegments[i + 1];
+
+            // Collision
+            Collider[] collisions = Physics.OverlapSphere(segment1.currentPos, 0.4f);
+            for (int j = 0; j < collisions.Length; j++)
+            {
+                if (collisions[j].transform.root.name != "Iguana")
+                {
+                    RaycastHit hit;
+                    if (Physics.Raycast(segment1.currentPos, collisions[j].ClosestPoint(segment1.currentPos) - segment1.currentPos, out hit))
+                    {
+                        segment1.currentPos = collisions[j].ClosestPoint(segment1.currentPos) + (hit.normal*0.4f);
+                    }
+                }
+            }
 
             //Actual rope behavior constraints
             float dist = (segment1.currentPos - segment2.currentPos).magnitude;
