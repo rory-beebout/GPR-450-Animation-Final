@@ -4,60 +4,154 @@ using UnityEngine;
 
 public class Lizard_IK : MonoBehaviour
 {
+    //-----------------------------------------------------------------------------------------------------------------------------
+    // Neck vars
     public GameObject neck;
 
     public GameObject lookat;
     private Quaternion targetRot;
+    private Vector3 neckOffset;
+    //-----------------------------------------------------------------------------------------------------------------------------
+    // Leg vars
 
-    public GameObject leg1_footConstraint, leg1_elbowConstraint, leg1_shoulder, leg1_elbow, leg1_foot;
+    [System.Serializable]
+    public class Leg
+    {
+        public GameObject endConstraint, poleConstraint, shoulder, elbow, foot;
+        public Vector3 shoulderRotationOffset, elbowRotationOffset, footRotationOffset;
+        public float shoulderToElbowLength, elbowToWristLength;
+
+        //public Leg(GameObject end, GameObject pole, GameObject theShoulder, GameObject theElbow, GameObject theFoot)
+        //{
+        //    endConstraint = end;
+        //    poleConstraint = pole;
+        //    shoulder = theShoulder;
+        //    elbow = theElbow;
+        //    foot = theFoot;
+        //    shoulderRotationOffset = theShoulder.transform.rotation.eulerAngles;
+        //    elbowRotationOffset = theElbow.transform.rotation.eulerAngles;
+        //    footRotationOffset = theFoot.transform.rotation.eulerAngles;
+        //}
+    }
+
+    public Leg leg1, leg2, leg3, leg4;
+
+    //-----------------------------------------------------------------------------------------------------------------------------
+    // Tail vars
+    public struct RopeSegment
+    {
+        public Vector3 currentPos;
+        public Vector3 oldPos;
+        public float segmentLength;
+        public GameObject bone;
+        public Vector3 boneRotationOffset;
+
+        public RopeSegment(Vector3 pos, float length, GameObject currentBone)
+        {
+            bone = currentBone;
+            boneRotationOffset = currentBone.transform.rotation.eulerAngles;
+            currentPos = pos;
+            oldPos = pos;
+            segmentLength = length;
+        }
+    }
+
+    public GameObject tail_BaseBone;
+    private List<RopeSegment> tailSegments = new List<RopeSegment>();
+    //-----------------------------------------------------------------------------------------------------------------------------
+
 
     public float headFollowSpeed = 1f;
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        initializeNeck();
+
+        initializeLeg(leg1);
+        initializeLeg(leg2);
+        initializeLeg(leg3);
+        initializeLeg(leg4);
+
+        initializeTail();
     }
 
-    // Update is called once per frame
-    void Update()
+    void initializeNeck()
     {
-        
+        neckOffset = neck.transform.rotation.eulerAngles;
+    }
+    private void initializeLeg(Leg leg)
+    {
+        //leg.shoulderRotationOffset = leg.shoulder.transform.rotation.eulerAngles;
+        leg.shoulderRotationOffset = new Vector3(90, 0, 0);
+        //leg.elbowRotationOffset = leg.elbow.transform.localRotation.eulerAngles;
+        leg.elbowRotationOffset = new Vector3(90, 0, 0);
+        leg.footRotationOffset = leg.foot.transform.rotation.eulerAngles;
+
+        leg.shoulderToElbowLength = Vector3.Distance(leg.elbow.transform.position, leg.shoulder.transform.position);
+        leg.elbowToWristLength = Vector3.Distance(leg.foot.transform.position, leg.elbow.transform.position);
     }
 
+    private void initializeTail()
+    {
+        GameObject currentBone = tail_BaseBone;
+        while (currentBone.transform.childCount > 0)
+        {
+            tailSegments.Add(new RopeSegment(currentBone.transform.position, Vector3.Distance(currentBone.transform.position, currentBone.transform.GetChild(0).position), currentBone));
+            currentBone = currentBone.transform.GetChild(0).gameObject;
+        }
+        tailSegments.Add(new RopeSegment(currentBone.transform.position, Vector3.Distance(currentBone.transform.position, currentBone.transform.position), currentBone));
+    }
     private void LateUpdate()
     {
         solveNeck();
 
-        solveLeg(leg1_footConstraint, leg1_elbowConstraint, leg1_shoulder, leg1_elbow, leg1_foot);
+        solveLeg(leg1);
+        solveLeg(leg2);
+        solveLeg(leg3);
+        solveLeg(leg4);
+
+        solveTail();
     }
 
     private void solveNeck()
     {
         Vector3 towardObjectFromHead = lookat.transform.position - neck.transform.position;
         targetRot = Quaternion.LookRotation(towardObjectFromHead, transform.up);
+        targetRot *= Quaternion.Euler(neckOffset);
         neck.transform.rotation = Quaternion.Slerp(neck.transform.rotation, targetRot, headFollowSpeed * Time.deltaTime);
     }
 
-    private void solveLeg(GameObject footTarget, GameObject elbowConstraint, GameObject shoulder, GameObject elbow, GameObject foot)
+    private void solveLeg(Leg leg)
     {
         // get shoulder-to-constraint vector
-        // a3real3Diff(baseToConstraint.v, controlLocator_wristConstraint.v, jointTransform_shoulder.v3.v);
-        Vector3 shoulderToFoot = footTarget.transform.position - shoulder.transform.position;
-        Vector3 shoulderToElbow = elbowConstraint.transform.position - shoulder.transform.position;
+        Vector3 shoulderToFoot = leg.endConstraint.transform.position - leg.shoulder.transform.position;
+        Vector3 shoulderToElbow = leg.poleConstraint.transform.position - leg.shoulder.transform.position;
 
-        float sideLength1 = shoulderToElbow.magnitude;
-        float sideLength2 = (elbowConstraint.transform.position - footTarget.transform.position).magnitude;
-        sideLength1 = 0.6f;
-        sideLength2 = 0.6f;
         float baseToEndLength = shoulderToFoot.magnitude;
         Vector3 elbowPos;
 
 
-        if (baseToEndLength > sideLength1 + sideLength2)
+        if (baseToEndLength > leg.shoulderToElbowLength + leg.elbowToWristLength)
         {
-            elbow.transform.rotation = Quaternion.LookRotation(shoulderToFoot, transform.up);
-            foot.transform.position = shoulderToFoot*sideLength2;
+            shoulderToFoot.Normalize();
+            elbowPos = (shoulderToFoot * leg.shoulderToElbowLength) + leg.shoulder.transform.position;
+
+            Quaternion targetShoulderRot = Quaternion.LookRotation(elbowPos - leg.shoulder.transform.position, leg.shoulder.transform.up);
+            targetShoulderRot *= Quaternion.Euler(leg.shoulderRotationOffset);
+            leg.shoulder.transform.rotation = targetShoulderRot;
+
+            Quaternion targetElbowRot = Quaternion.LookRotation(shoulderToFoot, leg.elbow.transform.up);
+            targetElbowRot *= Quaternion.Euler(leg.elbowRotationOffset);
+            leg.elbow.transform.rotation = targetElbowRot;
+
+            Quaternion targetFootRot = Quaternion.LookRotation(shoulderToFoot, leg.foot.transform.up);
+            targetFootRot *= Quaternion.Euler(leg.footRotationOffset);
+            leg.foot.transform.rotation = targetFootRot;
+
+            leg.elbow.transform.position = elbowPos;
+
+            leg.foot.transform.position = (elbowPos) + (shoulderToFoot * leg1.elbowToWristLength);
         }
         else
         {
@@ -69,24 +163,98 @@ public class Lizard_IK : MonoBehaviour
             triangleUp = Vector3.Cross(shoulderToFoot, planeNormal);
 
             // Use Heron's formula to calculate triangle area, then solve for height, then base-length
-            float s = 0.5f * (baseToEndLength + sideLength1 + sideLength2);
-            float triangleArea = Mathf.Sqrt(s * (s - baseToEndLength) * (s - sideLength1) * (s - sideLength2));
+            float s = 0.5f * (baseToEndLength + leg.shoulderToElbowLength + leg.elbowToWristLength);
+            float triangleArea = Mathf.Sqrt(s * (s - baseToEndLength) * (s - leg.shoulderToElbowLength) * (s - leg.elbowToWristLength));
             float triangleHeight = 2 * triangleArea / baseToEndLength;
-            float triangleBaseLength = Mathf.Sqrt((sideLength1 * sideLength1) - (triangleHeight * triangleHeight));
+            float triangleBaseLength = Mathf.Sqrt((leg.shoulderToElbowLength * leg.shoulderToElbowLength) - (triangleHeight * triangleHeight));
 
             shoulderToFoot *= triangleBaseLength;
 
             triangleUp *= triangleHeight;
 
-            elbowPos = triangleUp + shoulderToFoot;// + shoulder.transform.position;
-            elbow.transform.position = shoulder.transform.position + elbowPos;
-            foot.transform.position = footTarget.transform.position;
-            foot.transform.rotation = footTarget.transform.rotation;
-            //elbow.transform.rotation = Quaternion.LookRotation(elbow.transform.position - foot.transform.position, transform.up);
-            elbow.transform.rotation = Quaternion.LookRotation(foot.transform.position - elbow.transform.position, transform.up);
-            //shoulder.transform.rotation = Quaternion.LookRotation(shoulder.transform.position - elbowPos, transform.up);
-            shoulder.transform.rotation = Quaternion.LookRotation(elbowPos - shoulder.transform.position, transform.up);
+            elbowPos = triangleUp + shoulderToFoot + leg.shoulder.transform.position;
+            
+            Quaternion targetShoulderRot = Quaternion.LookRotation(elbowPos - leg.shoulder.transform.position, leg.shoulder.transform.up);
+            targetShoulderRot *= Quaternion.Euler(leg.shoulderRotationOffset);
+            leg.shoulder.transform.rotation = targetShoulderRot;
 
+            leg.elbow.transform.position = elbowPos;// + leg.shoulder.transform.position;
+            Vector3 towardFoot = leg.endConstraint.transform.position - leg.elbow.transform.position;
+            Quaternion targetElbowRot = Quaternion.LookRotation(towardFoot, leg.elbow.transform.up);
+            targetElbowRot *= Quaternion.Euler(leg.elbowRotationOffset);
+            leg.elbow.transform.rotation = targetElbowRot;
+
+            leg.foot.transform.position = leg.endConstraint.transform.position;
+            Quaternion targetFootRot = leg.endConstraint.transform.rotation;
+            targetFootRot *= Quaternion.Euler(leg.footRotationOffset);// * Quaternion.Inverse(Quaternion.Euler(leg.elbowRotationOffset));
+            leg.foot.transform.rotation = targetFootRot;
+        }
+    }
+
+
+    private void solveTail()
+    {
+        // Snap tail back
+        Vector3 gravity = 2f*-transform.forward;
+
+        for (int i = 0; i < tailSegments.Count; i++)
+        {
+            RopeSegment segment1 = tailSegments[i];
+
+            Vector3 newPos = segment1.currentPos + (segment1.currentPos - segment1.oldPos) + (gravity * Time.fixedDeltaTime);
+            segment1.oldPos = segment1.currentPos;
+            segment1.currentPos = newPos;
+
+            tailSegments[i] = segment1;
+        }
+
+        // Apply constraints
+        for (int i = 0; i < 16; i++)
+        {
+            ApplyTailConstraints();
+        }
+
+        // Apply transformations
+        for (int i = 0; i < tailSegments.Count - 1; i++)
+        {
+            tailSegments[i].bone.transform.position = tailSegments[i].currentPos;
+            Vector3 towardParent = tailSegments[i].bone.transform.parent.position - tailSegments[i].bone.transform.position;
+            Quaternion targetRot = Quaternion.LookRotation(towardParent, transform.up);
+            targetRot *= Quaternion.Euler(tailSegments[i].boneRotationOffset);
+            tailSegments[i].bone.transform.rotation = targetRot;
+        }
+    }
+
+    private void ApplyTailConstraints()
+    {
+        // Because structs are copy-based, we do this assignment in a roundabout way
+        RopeSegment startSegment = tailSegments[0];
+        startSegment.currentPos = tail_BaseBone.transform.position;
+        tailSegments[0] = startSegment;
+
+        //for loop to apply to all segments
+        for (int i = 0; i < tailSegments.Count - 1; i++)
+        {
+            RopeSegment segment1 = tailSegments[i];
+            RopeSegment segment2 = tailSegments[i + 1];
+
+            //Actual rope behavior constraints
+            float dist = (segment1.currentPos - segment2.currentPos).magnitude;
+            float error = dist - tailSegments[i].segmentLength;
+            Vector3 changeDir = (segment1.currentPos - segment2.currentPos).normalized;
+            Vector3 changeAmount = changeDir * error;
+            if (i != 0)
+            {
+                segment1.currentPos -= changeAmount * 0.5f;
+                tailSegments[i] = segment1;
+                segment2.currentPos += changeAmount * 0.5f;
+                tailSegments[i + 1] = segment2;
+            }
+            else
+            {
+                segment2.currentPos += changeAmount;
+                tailSegments[i + 1] = segment2;
+            }
         }
     }
 }
