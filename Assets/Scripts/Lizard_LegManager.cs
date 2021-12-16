@@ -88,15 +88,17 @@ public class Lizard_LegManager : MonoBehaviour
         Quaternion endRot = stepper.home.rotation;
         Vector3 endPoint = stepper.home.position;
 
-        Collider[] collisions = Physics.OverlapSphere(stepper.home.position, 0.04f);
+        Collider[] collisions = Physics.OverlapSphere(stepper.home.position, 0.25f);
         for (int j = 0; j < collisions.Length; j++)
         {
             if (collisions[j].transform.root.name != "Iguana")
             {
                 RaycastHit hit;
-                if (Physics.Raycast(stepper.home.position, collisions[j].ClosestPoint(stepper.home.position) - stepper.home.position, out hit, 2f))
+                int layerMask = 1 << 2;
+                layerMask = ~layerMask;
+                if (Physics.Raycast(stepper.foot.transform.parent.parent.parent.transform.position, collisions[j].ClosestPoint(stepper.home.position) - stepper.foot.transform.parent.parent.parent.transform.position, out hit, 2f, layerMask))
                 {
-                    endPoint = collisions[j].ClosestPoint(stepper.home.position) + (hit.normal * 0.04f);
+                    endPoint = collisions[j].ClosestPoint(stepper.home.position) + (hit.normal * 0.24f);
                     endRot = Quaternion.FromToRotation(stepper.effector.transform.up, hit.normal);
                 }
             }

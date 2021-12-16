@@ -252,7 +252,9 @@ public class Lizard_IK : MonoBehaviour
                 if (collisions[j].transform.root.name != "Iguana")
                 {
                     RaycastHit hit;
-                    if (Physics.Raycast(segment1.currentPos, collisions[j].ClosestPoint(segment1.currentPos) - segment1.currentPos, out hit))
+                    int layerMask = 1 << 2;
+                    layerMask = ~layerMask;
+                    if (Physics.Raycast(segment1.currentPos, collisions[j].ClosestPoint(segment1.currentPos) - segment1.currentPos, out hit, 2f, layerMask))
                     {
                         segment1.currentPos = collisions[j].ClosestPoint(segment1.currentPos) + (hit.normal*0.4f);
                     }
