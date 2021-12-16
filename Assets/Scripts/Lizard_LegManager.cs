@@ -98,7 +98,7 @@ public class Lizard_LegManager : MonoBehaviour
                 layerMask = ~layerMask;
                 if (Physics.Raycast(stepper.foot.transform.parent.parent.parent.transform.position, collisions[j].ClosestPoint(stepper.home.position) - stepper.foot.transform.parent.parent.parent.transform.position, out hit, 2f, layerMask))
                 {
-                    endPoint = collisions[j].ClosestPoint(stepper.home.position) + (hit.normal * 0.24f);
+                    endPoint = hit.point + (hit.normal * 0.04f);
                     endRot = Quaternion.FromToRotation(stepper.effector.transform.up, hit.normal);
                 }
             }
