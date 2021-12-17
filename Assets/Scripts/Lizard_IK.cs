@@ -82,6 +82,10 @@ public class Lizard_IK : MonoBehaviour
 
         gameObject.GetComponent<Lizard_LegManager>().init();
     }
+    private void Awake()
+    {
+        //gameObject.GetComponent<Animator>().enabled = true;
+    }
 
     void initializeNeck()
     {
@@ -91,7 +95,7 @@ public class Lizard_IK : MonoBehaviour
     {
         //leg.shoulderRotationOffset = leg.shoulder.transform.rotation.eulerAngles;
         leg.shoulderRotationOffset = new Vector3(90, 0, 0);
-        //leg.elbowRotationOffset = leg.elbow.transform.localRotation.eulerAngles;
+        //leg.elbowRotationOffset = leg.elbow.transform.rotation.eulerAngles;
         leg.elbowRotationOffset = new Vector3(90, 0, 0);
         leg.footRotationOffset = leg.foot.transform.rotation.eulerAngles;
 
@@ -110,6 +114,7 @@ public class Lizard_IK : MonoBehaviour
         tailSegments.Add(new RopeSegment(currentBone.transform.position, Vector3.Distance(currentBone.transform.position, currentBone.transform.position), currentBone));
     }
     private void LateUpdate()
+    //void OnAnimatorIK()
     {
         solveNeck();
 
@@ -152,12 +157,12 @@ public class Lizard_IK : MonoBehaviour
             targetElbowRot *= Quaternion.Euler(leg.elbowRotationOffset);
             leg.elbow.transform.rotation = targetElbowRot;
 
-            Quaternion targetFootRot = Quaternion.LookRotation(shoulderToFoot, leg.foot.transform.up);
+            Quaternion targetFootRot = leg.endConstraint.transform.rotation;
             targetFootRot *= Quaternion.Euler(leg.footRotationOffset);
             leg.foot.transform.rotation = targetFootRot;
 
-            leg.elbow.transform.position = elbowPos;
 
+            leg.elbow.transform.position = elbowPos;
             leg.foot.transform.position = (elbowPos) + (shoulderToFoot * leg1.elbowToWristLength);
         }
         else
@@ -176,16 +181,14 @@ public class Lizard_IK : MonoBehaviour
             float triangleBaseLength = Mathf.Sqrt((leg.shoulderToElbowLength * leg.shoulderToElbowLength) - (triangleHeight * triangleHeight));
 
             shoulderToFoot *= triangleBaseLength;
-
             triangleUp *= triangleHeight;
-
             elbowPos = triangleUp + shoulderToFoot + leg.shoulder.transform.position;
             
             Quaternion targetShoulderRot = Quaternion.LookRotation(elbowPos - leg.shoulder.transform.position, leg.shoulder.transform.up);
             targetShoulderRot *= Quaternion.Euler(leg.shoulderRotationOffset);
             leg.shoulder.transform.rotation = targetShoulderRot;
 
-            leg.elbow.transform.position = elbowPos;// + leg.shoulder.transform.position;
+            leg.elbow.transform.position = elbowPos;
             Vector3 towardFoot = leg.endConstraint.transform.position - leg.elbow.transform.position;
             Quaternion targetElbowRot = Quaternion.LookRotation(towardFoot, leg.elbow.transform.up);
             targetElbowRot *= Quaternion.Euler(leg.elbowRotationOffset);
@@ -193,7 +196,7 @@ public class Lizard_IK : MonoBehaviour
 
             leg.foot.transform.position = leg.endConstraint.transform.position;
             Quaternion targetFootRot = leg.endConstraint.transform.rotation;
-            targetFootRot *= Quaternion.Euler(leg.footRotationOffset);// * Quaternion.Inverse(Quaternion.Euler(leg.elbowRotationOffset));
+            targetFootRot *= Quaternion.Euler(leg.footRotationOffset);
             leg.foot.transform.rotation = targetFootRot;
         }
     }
@@ -261,7 +264,7 @@ public class Lizard_IK : MonoBehaviour
                 }
             }
 
-            //Actual rope behavior constraints
+            // actual rope behavior constraints
             float dist = (segment1.currentPos - segment2.currentPos).magnitude;
             float error = dist - tailSegments[i].segmentLength;
             Vector3 changeDir = (segment1.currentPos - segment2.currentPos).normalized;
