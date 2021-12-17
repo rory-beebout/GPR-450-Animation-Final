@@ -120,7 +120,7 @@ public class Lizard_LegManager : MonoBehaviour
             float param = timeElapsed / stepper.stepDuration;
 
             // Interpolate position and rotation
-            stepper.effector.transform.position = Vector3.Lerp(Vector3.Lerp(start, centerPoint, param), Vector3.Lerp(centerPoint, start, param), param);
+            stepper.effector.transform.position = Vector3.Lerp(Vector3.Lerp(start, centerPoint, param), Vector3.Lerp(centerPoint, end, param), param);
             stepper.effector.transform.rotation = Quaternion.Slerp(startRot, endRot, param);
 
             yield return null;
