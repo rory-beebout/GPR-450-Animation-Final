@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
 public class KeyframeData
 {
     enum constant
@@ -9,93 +11,120 @@ public class KeyframeData
         keyframeData_maxName = 32,
     };
 
-    struct Keyframe
+    public class Keyframe
     {
-        public uint index;
+        public int index;
 
-        public float duration, durationInv;
+        public float _duration, _durationInv;
 
-        public uint data;
+        public int data;
+
+        public Keyframe(float duration, int value_x)
+        {
+            _duration = duration;
+            _durationInv = 1.0f / duration;
+            data = value_x;
+        }
     };
 
-    struct KeyframePool
+    public class KeyframePool
     {
-        public Keyframe[] keyframe;
-        public uint count;
+        public Keyframe[] _keyframe;
+        public int _count;
+
+        public KeyframePool(Keyframe[] keyframes)
+        {
+            _keyframe = keyframes;
+            _count = keyframes.Length;
+        }
+
+        public Keyframe this[int i]
+        {
+            get { return _keyframe[i]; }
+            set { _keyframe[i] = value; }
+        }
     }
 
-    struct Clip
+    public class Clip
     {
-        public byte[] name;
+        public string _name;
 
-        public uint index;
+        public int index;
 
         public float duration, durationInv;
 
-        public uint keyframeCount;
-        
-        public uint first_keyframe;
+        public int keyframeCount;
 
-        public uint last_keyframe;
+        public int first_keyframe;
 
-        public KeyframePool[] framePool;
+        public int last_keyframe;
+
+        public KeyframePool framePool;
+
+        public Clip(string name, KeyframePool keyframePool, int firstKeyframeIndex, int lastKeyframeIndex)
+        {
+            _name = name;
+
+            framePool = keyframePool;
+
+            first_keyframe = firstKeyframeIndex;
+            last_keyframe = lastKeyframeIndex;
+
+            for (int i = firstKeyframeIndex; i <= lastKeyframeIndex; i++)
+            {
+                duration += framePool[i]._duration;
+            }
+            durationInv = 1 / duration;
+        }
+
+        public Keyframe this[int i]
+        {
+            get { return framePool[i]; }
+        }
     }
 
-    struct ClipPool
+    public class ClipPool
     {
         public Clip[] clip;
 
-        public uint count;
-    }
+        public int count;
 
-    int keyframeInit(Keyframe keyframe_out, float duration, uint value_x)
-    {
-        keyframe_out.duration = duration;
-        keyframe_out.durationInv = 1.0f / duration;
-
-        keyframe_out.data = value_x;
-
-        return -1;
-    }
-
-    int keyframePoolCreate(KeyframePool keyframePool_out, uint count)
-    {
-        keyframePool_out.keyframe = new Keyframe[32];
-        keyframePool_out.count = count;
-
-        return -1;
-    }
-
-    int clipInit(Clip clip_out, byte[] clipName, KeyframePool[] keyframePool, uint firstKeyframeIndex, uint lastKeyframeIndex)
-    {
-        clipName = new byte[32];
-
-        for(uint i = 0; i < 32; i ++)
+        public ClipPool(Clip[] clips)
         {
-            clip_out.name[i] = clipName[i];
+            count = clips.Length;
+            clip = clips;
+            for(int i = 0; i < clips.Length; i++)
+            {
+                clip[i].index = i;
+            }
         }
-
-        clip_out.framePool = keyframePool;
-
-        clip_out.first_keyframe = firstKeyframeIndex;
-        clip_out.last_keyframe = lastKeyframeIndex;
-        return -1;
-    }
-
-    int keyframePoolRelease(KeyframePool keyframePool)
-    {
-        return -1;
+        public Clip GetClipIndexByName(string name)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (clip[i]._name == name)
+                {
+                    return clip[i];
+                }
+            }
+            return null;
+        }
+        public Clip this[int i]
+        {
+            get { return clip[i]; }
+            set { clip[i] = value; }
+        }
     }
 
     // Start is called before the first frame update
     void Start()
     {
-        
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 }
