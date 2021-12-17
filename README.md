@@ -16,12 +16,12 @@ This demo is an excercise in using IK to bring a lizard model to life.
 - ![Iguana Look](Images/IguanaLookDiagram.gif)
 - ![Iguana Look](Images/IguanaLook.gif)
 - **Stepping**
-- ![Walk 1](Images/lizWalk.png)
-- ![Walk 2](Images/lizWalk2.png)
+- ![Walk 1](Images/lizWalk.gif)
+- ![Walk 2](Images/lizWalk2.gif)
 - ![IK](Images/Untitled.png)
 - ![Step1](Images/Step.png) ![Step2](Images/Step2.png)
 - **Tail Physics**
-- ![Tail](Images/lizTail.png)
+- ![Tail](Images/lizTail.gif)
 ---
 
 ### Instructions
